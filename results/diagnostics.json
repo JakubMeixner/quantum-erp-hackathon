@@ -1,0 +1,100 @@
+{
+  "instance_A": {
+    "makespan": 4,
+    "qaoa_expected_energy": 3.999999999999999,
+    "gamma": 1.5707963267948966,
+    "beta": 2.356194490192345,
+    "probabilities": [
+      0.9999999999999998,
+      1.326330150824197e-32
+    ],
+    "shots": 1024,
+    "counts": [
+      1024,
+      0
+    ],
+    "bitstring": 0,
+    "qubo_constant": 4,
+    "qubo_linear": 1,
+    "num_logical_qubits": 1,
+    "method": "QAOA p=1 (NumPy state-vector simulator, 1-qubit permutation QUBO)",
+    "classical_reference": 4,
+    "quantum_result_validated": true
+  },
+  "instance_B": {
+    "exact_classical_reference_makespan": 8,
+    "enumerated_machine_order_combinations": 216,
+    "tested_horizons": [
+      {
+        "horizon": 8,
+        "feasible": true,
+        "minimum_qubo_energy": 0.0,
+        "solver_status": "proven globally optimal",
+        "mip_gap": 0.0,
+        "raw_start_variables": 72,
+        "window_start_variables_before_outage": 39,
+        "start_variables_after_outage": 39,
+        "qubo_quadratic_couplings": 181,
+        "linearization_auxiliaries_not_qubo_variables": 181
+      }
+    ],
+    "outages": {},
+    "formulation": "Penalty QUBO: exactly-once squares + invalid precedence pairs + overlapping-machine pairs",
+    "search": "Find first feasible horizon starting at certified lower bound",
+    "objective_guarantee": "Zero QUBO energy iff feasible at the tested horizon"
+  },
+  "stage2": {
+    "exact_classical_reference_makespan": 10,
+    "enumerated_machine_order_combinations": 216,
+    "tested_horizons": [
+      {
+        "horizon": 8,
+        "feasible": false,
+        "minimum_qubo_energy": 1.0,
+        "solver_status": "proven globally optimal",
+        "mip_gap": 0.0,
+        "raw_start_variables": 72,
+        "window_start_variables_before_outage": 39,
+        "start_variables_after_outage": 32,
+        "qubo_quadratic_couplings": 122,
+        "linearization_auxiliaries_not_qubo_variables": 122
+      },
+      {
+        "horizon": 9,
+        "feasible": false,
+        "minimum_qubo_energy": 1.0,
+        "solver_status": "proven globally optimal",
+        "mip_gap": 0.0,
+        "raw_start_variables": 81,
+        "window_start_variables_before_outage": 48,
+        "start_variables_after_outage": 41,
+        "qubo_quadratic_couplings": 192,
+        "linearization_auxiliaries_not_qubo_variables": 192
+      },
+      {
+        "horizon": 10,
+        "feasible": true,
+        "minimum_qubo_energy": 0.0,
+        "solver_status": "proven globally optimal",
+        "mip_gap": 0.0,
+        "raw_start_variables": 90,
+        "window_start_variables_before_outage": 57,
+        "start_variables_after_outage": 50,
+        "qubo_quadratic_couplings": 277,
+        "linearization_auxiliaries_not_qubo_variables": 277
+      }
+    ],
+    "outages": {
+      "F": [
+        [
+          2,
+          4
+        ]
+      ]
+    },
+    "formulation": "Penalty QUBO: exactly-once squares + invalid precedence pairs + overlapping-machine pairs",
+    "search": "Find first feasible horizon starting at certified lower bound",
+    "objective_guarantee": "Zero QUBO energy iff feasible at the tested horizon"
+  },
+  "important_note": "A uses a true 1-qubit QAOA simulator; B and Stage 2 use an exact classical QUBO solver. No quantum advantage is claimed."
+}

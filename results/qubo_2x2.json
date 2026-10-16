@@ -1,0 +1,11 @@
+{
+  "description": "x=0: Z2 then Z1; x=1: Z1 then Z2",
+  "variables": [
+    "x"
+  ],
+  "constant": 4,
+  "linear": [
+    1
+  ],
+  "quadratic": []
+}

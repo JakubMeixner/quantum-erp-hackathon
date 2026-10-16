@@ -1,0 +1,13 @@
+[project]
+name = "quantum-erp-hackathon"
+version = "0.1.0"
+description = "QPoland 2026 factory scheduling QUBO and QAOA hackathon solution"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.23",
+    "scipy>=1.11",
+]
+
+[tool.uv]
+package = false
