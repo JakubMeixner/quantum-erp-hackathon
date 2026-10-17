@@ -1,10 +1,4 @@
-import {
-  JOBS,
-  MACHINES,
-  type Job,
-  type Machine,
-  type ScheduledOperation,
-} from "./domain";
+import type { Job, Machine, ScheduledOperation, Variant } from "./domain";
 import type { SolverInput } from "./solverInput";
 
 /** Base URL of the FastAPI server (api.py). Override with VITE_API_URL. */
@@ -40,21 +34,22 @@ function toSolverPayload(input: SolverInput) {
   };
 }
 
-const isJob = (v: string): v is Job => (JOBS as readonly string[]).includes(v);
-const isMachine = (v: string): v is Machine =>
-  (MACHINES as readonly string[]).includes(v);
-
 /** `schedule` records (job, machine, start, end) -> operations the timetable draws. */
-export function scheduleToOperations(response: SolverResponse): ScheduledOperation[] {
+export function scheduleToOperations(
+  response: SolverResponse,
+  variant: Variant,
+): ScheduledOperation[] {
   return response.schedule.map((record) => {
-    if (!isJob(record.job) || !isMachine(record.machine)) {
+    const job = variant.jobs.find((j) => j === record.job);
+    const machine = variant.machines.find((m) => m === record.machine);
+    if (!job || !machine) {
       throw new Error(
         `Unexpected operation in solver response: ${record.job} on ${record.machine}.`,
       );
     }
     return {
-      job: record.job,
-      machine: record.machine,
+      job: job as Job,
+      machine: machine as Machine,
       start: record.start,
       duration: record.end - record.start,
     };

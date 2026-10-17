@@ -1,5 +1,5 @@
 import { Box, Paper, Typography } from "@mui/material";
-import { MACHINES } from "../domain";
+import type { Machine } from "../domain";
 
 /** The time axis is at least this long; it grows when the schedule is longer. */
 const MIN_HORIZON = 24;
@@ -9,7 +9,7 @@ const LABEL_WIDTH = 48;
 
 export interface TimetableBlock {
   id: string;
-  /** Index of the row (0 = T, 1 = F, 2 = S). */
+  /** Index of the row in `machines`. */
   row: number;
   /** Position on the time axis. Any number, not snapped to the ticks. */
   start: number;
@@ -20,12 +20,18 @@ export interface TimetableBlock {
 }
 
 interface TimetableProps {
+  /** One row per machine, in this order. */
+  machines: readonly Machine[];
   blocks?: TimetableBlock[];
   /** Exact length of the time axis (e.g. the makespan returned by the solver). */
   horizon?: number;
 }
 
-export default function Timetable({ blocks = [], horizon: fixedHorizon }: TimetableProps) {
+export default function Timetable({
+  machines,
+  blocks = [],
+  horizon: fixedHorizon,
+}: TimetableProps) {
   const blocksEnd = Math.ceil(
     blocks.reduce((max, b) => Math.max(max, b.start + b.duration), 0),
   );
@@ -72,7 +78,7 @@ export default function Timetable({ blocks = [], horizon: fixedHorizon }: Timeta
       </Box>
 
       {/* Rows */}
-      {MACHINES.map((label, rowIndex) => (
+      {machines.map((label, rowIndex) => (
         <Box key={label} sx={{ display: "flex", alignItems: "stretch" }}>
           <Typography
             fontWeight={700}
@@ -92,7 +98,7 @@ export default function Timetable({ blocks = [], horizon: fixedHorizon }: Timeta
               flex: 1,
               height: ROW_HEIGHT,
               borderTop: 1,
-              borderBottom: rowIndex === MACHINES.length - 1 ? 1 : 0,
+              borderBottom: rowIndex === machines.length - 1 ? 1 : 0,
               borderColor: "divider",
               backgroundImage:
                 "linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px)",

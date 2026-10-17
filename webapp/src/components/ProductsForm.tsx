@@ -1,16 +1,16 @@
 import { Alert, Box, Button, Paper, TextField, Typography } from "@mui/material";
 import UploadIcon from "@mui/icons-material/Upload";
 import {
-  JOBS,
-  MACHINES,
   isValid,
   type FormValues,
   type Job,
   type Machine,
+  type Variant,
 } from "../domain";
 
 interface ProductsFormProps {
   values: FormValues;
+  variant: Variant;
   onChange: (job: Job, machine: Machine, value: string) => void;
   onRun: () => void;
   onUpload: (file: File) => void;
@@ -20,13 +20,16 @@ interface ProductsFormProps {
 
 export default function ProductsForm({
   values,
+  variant,
   onChange,
   onRun,
   onUpload,
   running = false,
   error = null,
 }: ProductsFormProps) {
-  const allFilled = JOBS.every((j) => MACHINES.every((m) => isValid(values[j][m])));
+  const allFilled = variant.jobs.every((j) =>
+    variant.machines.every((m) => isValid(values[j][m])),
+  );
 
   return (
     <Paper
@@ -69,7 +72,7 @@ export default function ProductsForm({
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: "auto repeat(3, minmax(0, 1fr))",
+          gridTemplateColumns: `auto repeat(${variant.machines.length}, minmax(0, 1fr))`,
           gap: 1.5,
           alignItems: "center",
           mt: 2,
@@ -77,16 +80,16 @@ export default function ProductsForm({
         }}
       >
         <Box />
-        {MACHINES.map((m) => (
+        {variant.machines.map((m) => (
           <Typography key={m} fontWeight={700} align="center">
             {m}
           </Typography>
         ))}
 
-        {JOBS.map((j) => (
+        {variant.jobs.map((j) => (
           <Box key={j} sx={{ display: "contents" }}>
             <Typography fontWeight={700}>{j}</Typography>
-            {MACHINES.map((m) => (
+            {variant.machines.map((m) => (
               <TextField
                 key={m}
                 type="number"
