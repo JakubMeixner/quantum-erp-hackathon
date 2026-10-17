@@ -113,3 +113,76 @@ To reproduce or port the calculation into another QUBO backend, the runner also 
 - `results/qubo_extension_milling_outage_H10.json` — 50-bit outage QUBO.
 
 Each includes the constant offset, every binary variable's meaning, all linear biases and all nonzero pairwise coefficients. In the latter two files the `quadratic` entries are `[index_i, index_j, coefficient]`. They are *real quadratic models*, not arbitrary matrices built after finding a schedule.
+
+## VeloxQ Integration
+
+The project supports three optimization backends:
+
+1. QAOA: one-qubit quantum state-vector simulation.
+2. SciPy/HiGHS: exact classical QUBO optimization.
+3. VeloxQ: remote physics-inspired classical QUBO optimization.
+
+VeloxQ is not physical quantum hardware.
+
+### Installation
+
+Run `uv sync` from the repository root.
+
+### Authentication
+
+Set the `VELOX_TOKEN` environment variable before starting Jupyter
+or submitting remote jobs. Never commit API credentials.
+
+### Jupyter experiments
+
+Launch Jupyter using:
+
+`uv run jupyter notebook --no-browser --ip=127.0.0.1 --port=8890`
+
+Open `notebooks/veloxq_experiments.ipynb`.
+
+The notebook includes SDK connectivity tests, binary-to-spin
+verification, the 2x2 baseline, the 3x3 baseline, and the
+milling-machine outage extension.
+
+### Remote QUBO execution
+
+- 2x2: `uv run python run_velox.py --case a`
+- 3x3: `uv run python run_velox.py --case b`
+- Outage: `uv run python run_velox.py --case outage`
+- All: `uv run python run_velox.py --case all`
+
+### QUBO formulation
+
+At fixed horizon H, the QUBO penalizes violations of operation
+uniqueness, technological precedence, and machine capacity.
+
+A zero-energy assignment is a feasible schedule within H.
+
+The dimod convention is `s = 2*x - 1`, with inverse `x = (s+1)/2`.
+
+The adapter supports integer and string sample labels, and
+recomputes original QUBO energies independently.
+
+A positive heuristic energy does not prove infeasibility.
+
+### Classical reference results
+
+| Instance | Variables | Couplings | Makespan |
+|---|---:|---:|---:|
+| 2x2 | 8 | 12 | 4 hours |
+| 3x3 | 39 | 181 | 8 hours |
+| Milling outage | 50 | 277 | 10 hours |
+
+These are independently checked classical results, not measured
+VeloxQ success rates.
+
+### Testing
+
+Run `uv run python -m unittest discover -s tests -v`.
+
+### Limitations
+
+No physical quantum hardware execution or quantum advantage has
+been demonstrated. The VeloxQ integration is a heuristic remote
+backend; its returned schedules require independent validation.
