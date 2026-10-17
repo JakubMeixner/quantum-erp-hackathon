@@ -5,11 +5,19 @@ description = "QPoland 2026 factory scheduling QUBO and QAOA hackathon solution"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "dimod>=0.12,<1",
     "fastapi>=0.143.3",
     "numpy>=1.23",
     "scipy>=1.11",
     "uvicorn[standard]>=0.54.0",
+    "veloxq-sdk==1.0.0",
 ]
 
 [tool.uv]
 package = false
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.3.0",
+    "notebook>=7.6.3",
+]

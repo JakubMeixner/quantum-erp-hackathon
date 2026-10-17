@@ -4,3 +4,15 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .DS_Store
+
+# VeloxQ credentials
+.env
+.env.*
+config.py
+
+# Jupyter temporary files
+.ipynb_checkpoints/
+
+# Local solver artifacts
+*.hdf5
+*.h5
