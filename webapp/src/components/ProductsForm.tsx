@@ -94,7 +94,12 @@ export default function ProductsForm({
             {variant.machines.map((m) => (
               <TextField
                 key={m}
-                sx={{color: "white", borderColor: 'white', border: 1, input: {color: "white"}}}
+                sx={{
+                  color: "white", 
+                  borderColor: 'white', 
+                  border: 1, 
+                  input: {color: "white"},
+                }}
                 type="number"
                 size="small"
                 value={values[j][m]}
@@ -120,7 +125,13 @@ export default function ProductsForm({
         fullWidth
         disabled={!allFilled || running}
         onClick={onRun}
-        sx={{ mt: "auto", color: "white", borderColor: 'white' }}
+        sx={{ mt: "auto", color: "white", borderColor: 'white', 
+          background: 'rgba(98,12,49,.7)',
+          transition: 'filter 0.4s',
+          '&:hover': {
+            filter: 'brightness(70%)'
+          }
+         }}
       >
         Run optimization
       </Button>

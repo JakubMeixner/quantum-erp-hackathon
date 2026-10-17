@@ -5,6 +5,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Typography,
+  useMediaQuery
 } from "@mui/material";
 import ProductsForm from "../components/ProductsForm";
 import Timetable, { type TimetableBlock } from "../components/Timetable";
@@ -45,6 +46,8 @@ export default function Optimize() {
     operations: ScheduledOperation[];
   } | null>(null);
   const [running, setRunning] = useState(false);
+
+  const matches = useMediaQuery("(min-width: 1024px)")
 
   // Solver result if there is one, otherwise recomputed on every keystroke.
   const blocks: TimetableBlock[] = useMemo(
@@ -175,7 +178,7 @@ export default function Optimize() {
         }}
       >
         {/* Left-hand side: flex 1 */}
-        <Box sx={{ flex: 1, minWidth: 0, display: "flex" }}>
+        <Box sx={{ flex: 2, minWidth: 0, display: "flex" }}>
           <ProductsForm
             values={values}
             variant={variant}
@@ -188,7 +191,7 @@ export default function Optimize() {
         </Box>
 
         {/* Right-hand side: flex 3 */}
-        <Box sx={{ flex: 3, minWidth: 0, display: "flex" }}>
+        <Box sx={{ flex: matches ? 3 : 2, minWidth: 0, display: "flex" }}>
           <Timetable
             machines={variant.machines}
             blocks={blocks}
@@ -200,7 +203,7 @@ export default function Optimize() {
       {/* Below the timetable, only once results exist */}
       {solved && (
         <Box sx={{ display: "flex", gap: 3 }}>
-          <Box sx={{ flex: 1, display: { xs: "none", md: "block" } }} />
+          <Box sx={{ flex: 2, display: { xs: "none", md: "block" } }} />
           <Box
             sx={{
               flex: 3,

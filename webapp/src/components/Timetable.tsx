@@ -1,4 +1,4 @@
-import { Box, Paper, Typography } from "@mui/material";
+import { Box, Paper, Typography, Tooltip } from "@mui/material";
 import type { Machine } from "../domain";
 
 /** The time axis is at least this long; it grows when the schedule is longer. */
@@ -92,7 +92,6 @@ export default function Timetable({
           >
             {label}
           </Typography>
-
           <Box
             sx={{
               position: "relative",
@@ -109,8 +108,8 @@ export default function Timetable({
             {blocks
               .filter((b) => b.row === rowIndex)
               .map((b) => (
+                <Tooltip key={b.id} title={`${b.label} - from ${b.start} to ${b.start + b.duration}`}>
                 <Box
-                  key={b.id}
                   sx={{
                     position: "absolute",
                     top: 6,
@@ -130,6 +129,7 @@ export default function Timetable({
                 >
                   {b.label}
                 </Box>
+                </Tooltip>
               ))}
           </Box>
         </Box>

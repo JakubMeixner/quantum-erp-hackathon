@@ -1,0 +1,31 @@
+{
+  "instance": "input",
+  "method": "Time-indexed QUBO (exact classical HiGHS MILP linearization)",
+  "makespan": 10,
+  "schedule": [
+    {
+      "job": "Z1",
+      "machine": "T",
+      "start": 5,
+      "end": 6
+    },
+    {
+      "job": "Z1",
+      "machine": "F",
+      "start": 9,
+      "end": 10
+    },
+    {
+      "job": "Z2",
+      "machine": "T",
+      "start": 0,
+      "end": 4
+    },
+    {
+      "job": "Z2",
+      "machine": "F",
+      "start": 4,
+      "end": 9
+    }
+  ]
+}
