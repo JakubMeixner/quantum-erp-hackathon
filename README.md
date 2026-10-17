@@ -4,6 +4,8 @@
 
 ## Run
 
+### Quantum part
+
 Requires [uv](https://docs.astral.sh/uv/) and Python 3.10+ (the `.python-version` selects Python 3.13 by default). `uv` installs NumPy and SciPy (including SciPy `optimize.milp` / HiGHS) into an isolated `.venv` using `pyproject.toml`. The first online sync also generates `uv.lock`. No cloud login, hardware, VeloxQ token, or Qiskit installation is needed.
 
 ```bash
@@ -20,6 +22,19 @@ To activate the environment for manual Python commands, use `source .venv/bin/ac
 To install `uv` if needed, see the [official installation instructions](https://docs.astral.sh/uv/getting-started/installation/).
 
 `uv run python run_demo.py --inputs inputs --output results` can be used to specify input/output directories. The inputs use the hackathon's JSON schema; the extension adds an `outages` array.
+
+### Application part
+
+To run the QUBO part in the web application view, make sure you have the node 20.9.0 or newer and npm of 10.1.0 or newer.
+
+Steps of running the application locally:
+1. Open one terminal tab
+2. Type `uv run uvicorn api:app --reload`
+3. Open the second terminal tab
+4. Execute `cd webapp`
+5. Run `npm install`
+6. Run `npm run dev`
+7. The application should be available at `http://localhost:5173/`
 
 ## Validated results
 
