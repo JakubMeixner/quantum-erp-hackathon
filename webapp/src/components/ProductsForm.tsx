@@ -35,7 +35,7 @@ export default function ProductsForm({
     <Paper
       component="section"
       variant="outlined"
-      sx={{ p: 2, flexGrow: 1, minWidth: 0, display: "flex", flexDirection: "column" }}
+      sx={{ p: 2, flexGrow: 1, minWidth: 0, display: "flex", flexDirection: "column", background: "rgba(48,12,48,.6)", borderColor: "white" }}
     >
       <Box
         sx={{
@@ -45,7 +45,7 @@ export default function ProductsForm({
           gap: 1,
         }}
       >
-        <Typography variant="h5" component="h2">
+        <Typography variant="h5" component="h2" sx={{color: "white"}}>
           Products to plan
         </Typography>
         <Button
@@ -54,6 +54,7 @@ export default function ProductsForm({
           size="small"
           startIcon={<UploadIcon />}
           disabled={running}
+          sx={{color: "white", borderColor: 'white'}}
         >
           Upload
           <input
@@ -77,21 +78,23 @@ export default function ProductsForm({
           alignItems: "center",
           mt: 2,
           mb: 3,
+          color: "white", borderColor: 'white' 
         }}
       >
         <Box />
         {variant.machines.map((m) => (
-          <Typography key={m} fontWeight={700} align="center">
+          <Typography key={m} fontWeight={700} align="center" sx={{color: "white", borderColor: 'white'}}>
             {m}
           </Typography>
         ))}
 
         {variant.jobs.map((j) => (
-          <Box key={j} sx={{ display: "contents" }}>
-            <Typography fontWeight={700}>{j}</Typography>
+          <Box key={j} sx={{ display: "contents", color: "white", borderColor: 'white'  }}>
+            <Typography fontWeight={700} sx={{ color: "white", borderColor: 'white' }}>{j}</Typography>
             {variant.machines.map((m) => (
               <TextField
                 key={m}
+                sx={{color: "white", borderColor: 'white', border: 1, input: {color: "white"}}}
                 type="number"
                 size="small"
                 value={values[j][m]}
@@ -117,7 +120,7 @@ export default function ProductsForm({
         fullWidth
         disabled={!allFilled || running}
         onClick={onRun}
-        sx={{ mt: "auto" }}
+        sx={{ mt: "auto", color: "white", borderColor: 'white' }}
       >
         Run optimization
       </Button>

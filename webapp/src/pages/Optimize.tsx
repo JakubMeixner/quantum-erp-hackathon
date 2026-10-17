@@ -120,7 +120,8 @@ export default function Optimize() {
         }}
       >
         <Typography variant="h4" component="h2" align="center" sx={{
-          color: "white"
+          color: "white",
+          textShadow: "2px 2px 4px rgba(0, 0, 0, 0.5)"
         }}>
           Select problem size
         </Typography>
@@ -207,6 +208,7 @@ export default function Optimize() {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
+              color: 'white'
             }}
           >
             <Typography fontWeight={600}>
@@ -215,6 +217,7 @@ export default function Optimize() {
             <Button
               variant="outlined"
               onClick={() => downloadJson("results.json", solved.response)}
+              sx={{color: "white", borderColor: "white"}}
             >
               Download results
             </Button>

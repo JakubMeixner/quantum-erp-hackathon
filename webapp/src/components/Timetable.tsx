@@ -51,20 +51,20 @@ export default function Timetable({
     <Paper
       component="section"
       variant="outlined"
-      sx={{ p: 2, flexGrow: 1, minWidth: 0 }}
+      sx={{ p: 2, flexGrow: 1, minWidth: 0, background: "rgba(48,12,48,.6)", borderColor: "white" }}
     >
-      <Typography variant="h5" component="h2" gutterBottom>
+      <Typography variant="h5" component="h2" gutterBottom sx={{color: "white"}}>
         Timetable
       </Typography>
 
       {/* Time axis */}
-      <Box sx={{ display: "flex", ml: `${LABEL_WIDTH}px`, mt: 2 }}>
-        <Box sx={{ position: "relative", flex: 1, height: 20 }}>
+      <Box sx={{ display: "flex", ml: `${LABEL_WIDTH}px`, mt: 2, color: "white", borderColor: 'white' }}>
+        <Box sx={{ position: "relative", flex: 1, height: 20,color: "white", borderColor: 'white' }}>
           {ticks.map((t) => (
             <Typography
               key={t}
               variant="caption"
-              color="text.secondary"
+              color="white"
               sx={{
                 position: "absolute",
                 left: pct(t),
@@ -87,6 +87,7 @@ export default function Timetable({
               display: "flex",
               alignItems: "center",
               flexShrink: 0,
+              color: 'white'
             }}
           >
             {label}
@@ -99,9 +100,9 @@ export default function Timetable({
               height: ROW_HEIGHT,
               borderTop: 1,
               borderBottom: rowIndex === machines.length - 1 ? 1 : 0,
-              borderColor: "divider",
+              borderColor: "white",
               backgroundImage:
-                "linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px)",
+                "linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px)",
               backgroundSize: `${(100 * tickEvery) / horizon}% 100%`,
             }}
           >
@@ -124,6 +125,7 @@ export default function Timetable({
                     alignItems: "center",
                     overflow: "hidden",
                     whiteSpace: "nowrap",
+                    borderColor: 'white'
                   }}
                 >
                   {b.label}
