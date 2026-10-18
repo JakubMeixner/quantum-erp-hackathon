@@ -46,8 +46,8 @@ def build_qubo(factory: Factory, horizon: int) -> QUBO:
             latest = horizon - sum(row[k:])
             raw_times = list(range(earliest, latest+1))
             window_count += len(raw_times)
-            allowed = [t for t in raw_times if all(not (t < b and a < t + row[k])
-                                                  for a, b in factory.downtime(k))]
+            allowed = [t for t in raw_times
+                       if factory.operation_is_available(k, t, row[k])]
             if not allowed:
                 raise ImpossibleHorizon(f'{factory.jobs[j]} / {factory.machines[k]} cannot fit in H={horizon}')
             windows[j, k] = allowed
