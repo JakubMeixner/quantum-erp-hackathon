@@ -45,7 +45,6 @@ export default function Home() {
 
       <Button
         variant="contained"
-        color="transparent"
         onClick={() => navigate("/optimize")}
         sx={{
           fontFamily: INDUSTRIAL_FONT,
