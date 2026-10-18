@@ -23,6 +23,7 @@ export interface SolverResponse {
 /** Form input -> the format of `inputs/instance_3x3.json`. */
 function toSolverPayload(input: SolverInput) {
   return {
+    outages: input.outages ?? [],
     problem: "erp_scheduling",
     jobs: input.jobs.map((job) => ({
       id: job,
