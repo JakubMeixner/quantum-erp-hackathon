@@ -109,7 +109,7 @@ For fixed binary `x`, minimizing a positive `q_ij*y_ij` forces `y_ij = max(0,x_i
 
 The reference algorithm enumerates up to `(n!)**m` tuples of machine-specific orders (216 for 3 jobs and 3 machines), constructs a directed acyclic precedence graph consisting of technological and adjacent same-machine arcs, and computes earliest permissible starts by topological traversal. Each operation start is the latest predecessor completion, shifted past the outage if processing would intersect downtime. The method does not reuse the QUBO variables or energy, so it provides an independent implementation check. A common permutation is not assumed for the extended model.
 
-The post-hoc validator independently checks operation multiplicity, known processing times, precedence, machine-exclusive intervals, unavailable intervals and reported makespan. Unit tests include invalid overlap and invalid outage counterexamples. Seven tests pass in the included runtime.
+The post-hoc validator independently checks operation multiplicity, known processing times, precedence, machine-exclusive intervals, unavailable intervals and reported makespan. Unit tests include invalid overlap and invalid outage counterexamples. Sixteen offline tests pass in the audited repository, covering the original scheduling assertions, API outages, SPIN energy equivalence, and sample-label decoding.
 
 Baseline A lower bound 4 and reference 4. Baseline B lower bound 8 and reference 8. For the outage extension, exact QUBO infeasibility at H=8 and H=9 and feasibility at H=10 prove the optimum 10; independent enumeration confirms it.
 
@@ -131,3 +131,9 @@ Baseline A lower bound 4 and reference 4. Baseline B lower bound 8 and reference
 5. D-Wave, [*Binary Quadratic Models*](https://docs.dwavequantum.com/en/latest/concepts/models.html), definitions of QUBO and Ising models.
 
 No performance claim in this project relies on the above papers: the stated makespans, energies, variable counts and tests are reproducible by the supplied code.
+
+## 9. Integration and experimental traceability (2026-10-18)
+
+The FastAPI `/solver` endpoint accepts both the original challenge format and the compact frontend format, including an optional `outages` array. Invalid outage data is rejected before optimization. The React UI forwards this array to the exact classical HiGHS solver. This is separate from the remote VeloxQ CLI and notebook.
+
+The VeloxQ adapter uses the `dimod` convention `s=2x-1`, `x=(s+1)/2`. It converts the original BINARY QUBO to SPIN and recomputes each returned sample's energy in the original model, supporting integer or string variable labels. Notebook-saved outputs report zero-energy candidates for the time-indexed 2x2, 3x3 and outage QUBOs and validated makespans of 4, 8 and 10 hours. The results are single saved experiments, not statistical comparisons of latency or scaling. VeloxQ is a quantum-inspired classical backend; no physical QPU was used.

@@ -29,18 +29,42 @@
 - Added automatic infeasibility checks for overlapping operations and outage violations.
 - Ran seven automated tests successfully and generated three valid schedule JSON files and detailed diagnostics.
 
-## Open tasks for a submitting team
-
-- Set up and publish the required public MIT-licensed Git repository.
-- Record an actual ≤5-minute screen-capture demo; `DEMO_SCRIPT.md` contains a suggested walkthrough but **is not a video**.
-- Attend the live jury presentation and be prepared to defend why Instance A's one-qubit QAOA is genuine but does not scale.
-- Optionally run on external quantum/hybrid hardware or VeloxQ and add independently measured runtimes, multiple seeds, and reproducible performance statistics. These optional experiments have **not** been performed.
-
-## AI assistance disclosure
-
-The initial source code, research framing, mathematical notes and test harness were produced with AI assistance. The results and exact solver statuses were verified locally by executing the code. The submitting team should personally rerun and review all claims.
-
 ## 2026-10-16 — uv environment migration
 - Replaced `requirements.txt` installation workflow with `pyproject.toml`, `.python-version`, and `uv sync` / `uv run` commands.
-- Created a local `.venv` with `uv`. The execution environment could not reach PyPI to resolve a universal `uv.lock`, so the archive deliberately does not contain a lockfile. An online `uv sync` will create it; teams should commit it after generation.
-- Validated the code locally with `uv run --no-sync` and NumPy/SciPy already installed in the runner environment. Both baseline outputs and Stage 2 output reproduced; all seven unit tests passed. No claim is made that `uv sync` completed with a fresh dependency download in this offline environment.
+- Created a local `.venv` with `uv`. The initial offline package did not contain a lockfile. The team subsequently resolved and committed `uv.lock`; the current repository uses `uv sync --locked`.
+- Validated the code locally with `uv run --no-sync` and NumPy/SciPy already installed in the runner environment. Both baseline outputs and Stage 2 output reproduced; all seven unit tests passed. The initial offline check did not establish a fresh dependency install. Later local WSL sessions installed the full project environment.
+
+## 2026-10-17 — VeloxQ integration and solver separation
+
+- Added optional `veloxq-sdk==1.0.0` and `dimod`; kept the existing QAOA simulation and HiGHS optimizer as distinct, explicitly labeled methods. VeloxQ is a quantum-inspired *classical* remote solver, not a physical QPU.
+- Implemented `quantum_erp/veloxq_backend.py`: convert the fixed-horizon BINARY QUBO to an equivalent SPIN BQM with `s=2x-1`; check sampled Ising/QUBO energies locally; normalize integer and string spin variable labels; and reject non-SPIN responses.
+- Added `run_velox.py` for the 8-bit 2x2 *time-indexed* case, 39-bit 3x3 case and 50-bit milling-outage case, with post-solve schedule checks and classical-optimum comparison. This time-indexed 2x2 QUBO is not the one-bit QAOA permutation QUBO.
+- Added `notebooks/veloxq_experiments.ipynb` for SDK connectivity, spin-convention checks, one-bit QUBO and all three scheduling QUBOs. Fixed notebook working-directory imports and spin decoding after local tests identified those problems.
+
+## 2026-10-18 — Recorded remote VeloxQ experiments
+
+- The saved notebook output records a successful official SDK connectivity test and successful remote solutions for the one-bit 2x2 demonstration and three time-indexed scheduling models.
+- Notebook-observed results: 2x2 time-indexed H=4, locally recalculated energy 0 and validated makespan 4; 3x3 H=8, energy 0 and makespan 8 with 101 samples inspected; outage H=10, energy 0 and makespan 10 with 296 samples inspected. The single-bit test decoded the 4-hour optimum.
+- These observations are evidence of the **saved execution**, not proof of repeatable success probability or speed. No systematic repeated trials, wall-clock benchmark or scaling study is supplied; no quantum speedup or quantum-hardware execution is claimed.
+- Recalculation of QUBO energy and independent schedule validation are necessary because remote heuristic samples by themselves are not certificates of global optimality. Exact HiGHS and machine-order enumeration provide the reference optima for these small cases.
+
+## 2026-10-18 — REST API, outage correctness and frontend integration
+
+- Implemented and exercised the FastAPI `POST /solver` endpoint with canonical operation records and compact `jobs`/`machines`/`durations` JSON. Added strict handling of unknown outage machines, invalid time intervals, duplicates and overlapping outage windows (HTTP 422).
+- Centralized non-preemptive machine availability in `Factory.operation_is_available()`; the time-indexed QUBO excludes starts crossing a fixed half-open unavailable interval, and the independent output validator rejects any remaining collision. The solver reruns schedule validation before returning a response.
+- Reproduced a user-facing bug: the React form captured the outage but `toSolverPayload()` omitted `outages` from the HTTP request. Consequently the browser solved the *outage-free* 8-hour case while showing an F outage during [2,4).
+- Fixed `webapp/src/solverApi.ts` to send `outages: input.outages ?? []`, without changing the QUBO penalty structure. Direct API calls with F downtime [2,4) then returned the validated 10-hour optimum. The corresponding outage-free case remained at 8 hours.
+- Fixed `webapp/src/pages/Home.tsx` by removing unsupported Material UI `color="transparent"`; verified that the React/TypeScript/Vite production build passed under Linux-native Node.js after WSL accidentally invoked Windows npm in a temporary worktree.
+- Merged backend corrections as [PR #2](https://github.com/JakubMeixner/quantum-erp-hackathon/pull/2) and the frontend transport/build fixes as [PR #3](https://github.com/JakubMeixner/quantum-erp-hackathon/pull/3). The project now has a public MIT-licensed GitHub repository.
+
+## 2026-10-18 — Final reproducibility and regression audit
+
+- Expanded the test suite from the initial seven cases to **16 offline tests**: benchmark optima, infeasible horizons, strict API input, outage boundary and collision counterexamples, QUBO pruning, Ising energy equivalence, and integer/string sample-label decoding.
+- Replayed the tests against the uploaded project snapshot: all 16 passed. `run_demo.py` independently reproduced 4/8/10-hour reference makespans and exact outage QUBO energies 1, 1, 0 at H=8/9/10.
+- Reviewed README commands, corrected the committed lockfile and public repository status, distinguished the local classical web solver from optional remote VeloxQ, and documented WSL Linux-native Node requirements.
+- Remaining presentation deliverables: record and publish the demo video; perform the live jury defense; avoid treating notebook sample counts as runtime/scalability measurements. Repeat VeloxQ trials with measured latency and multiple problem sizes if claiming performance benefits.
+
+## AI assistance and evidence standard
+
+- AI assistance was used for code, tests, mathematical documentation, debugging and writing. Numerical conclusions are tied to exact solver outputs, independent enumeration, automated tests or clearly identified saved notebook outputs.
+- Treat a **zero-energy exact solver optimum** as a fixed-horizon feasibility certificate. A heuristic zero-energy sample certifies feasibility only; a positive heuristic energy does not certify infeasibility. The project makes no quantum speedup claim.

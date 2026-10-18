@@ -1,40 +1,43 @@
 # QPoland 2026 — ERP production scheduling QUBO (runnable submission package)
 
-**Status:** Two baseline instances and one rigorously verified Stage-2 extension are implemented. Demo video, public hosting, and live jury presentation must be completed externally by the submitting team.
+**Status:** Public MIT-licensed project with two baseline implementations, an outage-aware extension, a React/FastAPI demo, and an optional VeloxQ backend. The video and live jury presentation are separate deliverables.
 
-## Run
+## Quick start and reproducibility
 
-### Quantum part
+**Requirements:** Python >=3.10, [uv](https://docs.astral.sh/uv/), and (for the web UI) Linux-native Node.js 22 with npm. On WSL, verify `node -p "process.platform"` returns `linux`; Windows npm cannot reliably build inside a Linux `/tmp` worktree. Run commands from the repository root unless stated otherwise. `uv.lock` and `webapp/package-lock.json` are committed for reproducibility.
 
-Requires [uv](https://docs.astral.sh/uv/) and Python 3.10+ (the `.python-version` selects Python 3.13 by default). `uv` installs NumPy and SciPy (including SciPy `optimize.milp` / HiGHS) into an isolated `.venv` using `pyproject.toml`. The first online sync also generates `uv.lock`. No cloud login, hardware, VeloxQ token, or Qiskit installation is needed.
+### Python: QAOA simulation, exact QUBO solver, and tests
 
-```bash
-# In the extracted project directory:
-uv sync
-uv run python run_demo.py
-uv run python -m unittest discover -s tests -v
-```
+1. `uv sync --locked`
+2. `uv run python run_demo.py`
+3. `uv run python -m unittest discover -s tests -v`
 
-The first command creates `.venv/`, resolves the dependencies from `pyproject.toml`, generates `uv.lock`, and installs the packages. An internet connection is needed for the first sync unless the wheels are already cached. After the first successful sync, commit `uv.lock` for reproducibility.
-If you later edit dependencies, run `uv lock` followed by `uv sync`.
-To activate the environment for manual Python commands, use `source .venv/bin/activate` on macOS/Linux or `.venv\Scripts\activate` on Windows.
+`run_demo.py` writes the two baseline schedules, the outage schedule, diagnostics and machine-readable QUBO coefficients to `results/`. Change the destination using `--output <directory>` and the input directory using `--inputs <directory>`. These local calculations do **not** require a VeloxQ token.
 
-To install `uv` if needed, see the [official installation instructions](https://docs.astral.sh/uv/getting-started/installation/).
+### Web application: use two terminals
 
-`uv run python run_demo.py --inputs inputs --output results` can be used to specify input/output directories. The inputs use the hackathon's JSON schema; the extension adds an `outages` array.
+1. **Backend**, at repository root: `uv run uvicorn api:app --host 127.0.0.1 --port 8000`
+2. **Frontend**, in a second terminal: `cd webapp && npm ci && npm run build && npm run dev`
+3. Open <http://localhost:5173/>; API documentation is at <http://127.0.0.1:8000/docs>.
 
-### Application part
+The frontend sends job durations and `outages` to `POST /solver`; the backend parses either the canonical `jobs[].operations[]` format or compact `jobs`/`machines`/`durations` format. Invalid outages receive HTTP 422. The response contains `instance`, `method`, `makespan` and `schedule`. The browser uses the **exact classical HiGHS** backend; it does not call VeloxQ.
 
-To run the QUBO part in the web application view, make sure you have the node 20.9.0 or newer and npm of 10.1.0 or newer.
+To verify the outage independently, from the repository root with the backend running:
 
-Steps of running the application locally:
-1. Open one terminal tab
-2. Type `uv run uvicorn api:app --reload`
-3. Open the second terminal tab
-4. Execute `cd webapp`
-5. Run `npm install`
-6. Run `npm run dev`
-7. The application should be available at `http://localhost:5173/`
+`curl --fail-with-body -sS -X POST http://127.0.0.1:8000/solver -H 'Content-Type: application/json' --data-binary @inputs/extension_milling_outage.json`
+
+Expect `"makespan":10`; every operation on F must end at or before 2, or start at or after 4. Without the outage, the 3x3 instance has makespan 8.
+
+### VeloxQ remote experiments (optional)
+
+VeloxQ is a **physics-inspired classical remote QUBO optimizer**, not a physical QPU. Set the secret `VELOX_TOKEN` environment variable in the shell launching the process; never put tokens in source files or notebooks. Then run:
+
+- `uv run python run_velox.py --case a` — 2x2 **time-indexed** QUBO (8 variables; distinct from the 1-bit QAOA demo).
+- `uv run python run_velox.py --case b` — 3x3 QUBO (39 variables).
+- `uv run python run_velox.py --case outage` — outage QUBO (50 variables).
+- `uv run python run_velox.py --case all` — run all three remotely.
+
+For the notebook, run `uv run jupyter notebook --no-browser --ip=127.0.0.1 --port=8890`, then open `notebooks/veloxq_experiments.ipynb`. The integration converts BINARY to SPIN with `s=2x-1` (and `x=(s+1)/2`), handles integer/string labels, recomputes original QUBO energy and validates any feasible schedule locally. A nonzero energy from a heuristic sample **does not prove infeasibility**. The CLI writes a `*_veloxq.json` schedule only after finding and validating a feasible candidate.
 
 ## Validated results
 
@@ -70,31 +73,25 @@ At horizon `H=10`, the raw time-indexed model has 90 operation-start slots, stan
 3. A zero-penalty QUBO at a **fixed** horizon is a feasibility certificate, not by itself a makespan-minimizing objective. Searching horizons starting at a proven lower bound is how this project recovers the optimal makespan.
 4. HiGHS is a **classical** exact QUBO solver through a mathematically equivalent MILP; this is expressly allowed for Instance B. The extension is also classical. There are no claims of quantum speedup, NISQ performance, or hardware feasibility of a 39-qubit circuit.
 5. Running a classical enumeration to compute A's one-bit QUBO coefficients makes it especially instructive but not scalable. The time-indexed builder is the more general representation shown in B and Stage 2.
-6. This is a ready-to-publish **local project package**, not a remotely published Git repository. Recording/uploading a demo video and attending the live presentation require actions outside this runtime.
+6. The public repository is [JakubMeixner/quantum-erp-hackathon](https://github.com/JakubMeixner/quantum-erp-hackathon). A recorded video and a live jury presentation remain separate deliverables; source code is not evidence that either has taken place.
 
-## Repo structure
+## Repository guide
 
-```text
-pyproject.toml             uv dependency declaration (`uv.lock` generated on first online sync)
-.python-version            Python 3.13 selection (modifiable)
-inputs/                 Provided baseline inputs + extended outage input
-quantum_erp/model.py    Data model, bounds, independent schedule validator
-quantum_erp/io.py       Read JSON, verify common machine route
-quantum_erp/reference.py  Exact exhaustive machine-order reference
-quantum_erp/qubo.py     Time-indexed quadratic penalties + certified exact QUBO solver
-quantum_erp/qaoa.py     Genuine one-qubit p=1 QAOA state-vector simulation
-run_demo.py             End-to-end runner
-results/                Precomputed, independently validated JSON outputs
-tests/                  Unittest regression and negative constraint tests
-PROJECT_DESIGN.md       Detailed mathematical derivation and proof obligations
-DEVELOPMENT_LOG.md      Dated AI-assisted implementation notes
-DEMO_SCRIPT.md          Proposed 5-minute video + 3-minute live demo script
-LICENSE                 MIT
-```
+| Path | Purpose |
+|---|---|
+| `api.py`, `webapp/` | FastAPI `/solver` and React/MUI production-scheduling interface |
+| `quantum_erp/io.py`, `model.py` | Strict JSON parsing, factory data, outage availability and schedule validation |
+| `quantum_erp/qubo.py`, `reference.py` | Time-indexed QUBO, exact HiGHS optimization and independent enumeration |
+| `quantum_erp/qaoa.py`, `run_demo.py` | One-qubit QAOA simulation and reproducible benchmark runner |
+| `quantum_erp/veloxq_backend.py`, `run_velox.py` | Optional remote Ising/QUBO adapter and CLI |
+| `notebooks/veloxq_experiments.ipynb` | Saved SDK experiments and their recorded outputs |
+| `inputs/`, `results/` | Canonical factory cases, example schedules and QUBO coefficients |
+| `tests/` | 16 offline automated regression tests (including outage and spin decoding) |
+| `PROJECT_DESIGN.md`, `DEVELOPMENT_LOG.md`, `DEMO_SCRIPT.md` | Mathematics, engineering history and presentation plan |
 
 ## AI-use disclosure (required by hackathon)
 
-This initial implementation, accompanying documentation, test cases and analysis were generated with AI assistance on 2026-10-16. Mathematical claims were checked using independent algorithmic cross-verification and tests; the team must inspect the code, run it, understand the derivations and take responsibility for the final submitted work. The code was not tested on external quantum hardware or VeloxQ.
+This initial implementation, accompanying documentation, test cases and analysis were generated with AI assistance on 2026-10-16. Mathematical claims were checked using independent algorithmic cross-verification and tests; the team must inspect the code, run it, understand the derivations and take responsibility for the final submitted work. No physical quantum hardware was used. The notebook contains recorded VeloxQ remote-solver experiments, separately from the exact classical benchmarks.
 
 ## Relevant sources
 
@@ -114,112 +111,20 @@ To reproduce or port the calculation into another QUBO backend, the runner also 
 
 Each includes the constant offset, every binary variable's meaning, all linear biases and all nonzero pairwise coefficients. In the latter two files the `quadratic` entries are `[index_i, index_j, coefficient]`. They are *real quadratic models*, not arbitrary matrices built after finding a schedule.
 
-## VeloxQ Integration
+## Remote VeloxQ results recorded in the notebook
 
-The project supports three optimization backends:
+The uploaded notebook contains one recorded successful execution of each scheduling model. This evidence is **not** a repeated-run benchmark, latency measurement or claim of scaling performance:
 
-1. QAOA: one-qubit quantum state-vector simulation.
-2. SciPy/HiGHS: exact classical QUBO optimization.
-3. VeloxQ: remote physics-inspired classical QUBO optimization.
+| Remote QUBO case | Bits / couplings | Recorded local energy | Recorded makespan | Samples inspected |
+|---|---:|---:|---:|---:|
+| Time-indexed 2x2 | 8 / 12 | 0 | 4 h | Not summarized here |
+| Time-indexed 3x3 | 39 / 181 | 0 | 8 h | 101 |
+| F outage [2,4) | 50 / 277 | 0 | 10 h | 296 |
 
-VeloxQ is not physical quantum hardware.
+An additional notebook cell tests the **one-bit** 2x2 QUBO separately. The saved remote responses are checked against the original QUBO and independently validated when a zero-energy schedule is found. The repository contains no systematic multi-seed, wall-clock or scaling comparison; such experiments must be run and reported separately.
 
-### Installation
+## Outage constraint and API integration
 
-Run `uv sync` from the repository root.
+An outage `[a,b)` blocks an uninterrupted operation `[t,t+p)` on its machine unless `t+p<=a` or `t>=b`. The same condition is used to exclude illegal QUBO start variables and to validate returned schedules. The frontend transport fix was merged in [PR #3](https://github.com/JakubMeixner/quantum-erp-hackathon/pull/3); the backend validation and input handling were merged in [PR #2](https://github.com/JakubMeixner/quantum-erp-hackathon/pull/2).
 
-### Authentication
-
-Set the `VELOX_TOKEN` environment variable before starting Jupyter
-or submitting remote jobs. Never commit API credentials.
-
-### Jupyter experiments
-
-Launch Jupyter using:
-
-`uv run jupyter notebook --no-browser --ip=127.0.0.1 --port=8890`
-
-Open `notebooks/veloxq_experiments.ipynb`.
-
-The notebook includes SDK connectivity tests, binary-to-spin
-verification, the 2x2 baseline, the 3x3 baseline, and the
-milling-machine outage extension.
-
-### Remote QUBO execution
-
-- 2x2: `uv run python run_velox.py --case a`
-- 3x3: `uv run python run_velox.py --case b`
-- Outage: `uv run python run_velox.py --case outage`
-- All: `uv run python run_velox.py --case all`
-
-### QUBO formulation
-
-At fixed horizon H, the QUBO penalizes violations of operation
-uniqueness, technological precedence, and machine capacity.
-
-A zero-energy assignment is a feasible schedule within H.
-
-The dimod convention is `s = 2*x - 1`, with inverse `x = (s+1)/2`.
-
-The adapter supports integer and string sample labels, and
-recomputes original QUBO energies independently.
-
-A positive heuristic energy does not prove infeasibility.
-
-### Classical reference results
-
-| Instance | Variables | Couplings | Makespan |
-|---|---:|---:|---:|
-| 2x2 | 8 | 12 | 4 hours |
-| 3x3 | 39 | 181 | 8 hours |
-| Milling outage | 50 | 277 | 10 hours |
-
-These are independently checked classical results, not measured
-VeloxQ success rates.
-
-### Testing
-
-Run `uv run python -m unittest discover -s tests -v`.
-
-### Limitations
-
-No physical quantum hardware execution or quantum advantage has
-been demonstrated. The VeloxQ integration is a heuristic remote
-backend; its returned schedules require independent validation.
-
-## Machine outage semantics and API contract
-
-An outage is a fixed half-open interval [start, end) during which
-the specified machine cannot execute an operation.
-
-Operations are non-preemptive. Every operation on an unavailable
-machine must finish before the outage or start after it.
-
-The API supports both the original hackathon JSON schema and
-the compact jobs/machines/durations schema.
-
-Invalid outage intervals and unknown machines are rejected with
-HTTP 422 rather than silently ignored.
-
-The QUBO removes operation-start variables that would intersect
-an outage. Independent schedule validation checks the same
-physical constraint.
-
-For the 3x3 benchmark with milling unavailable during [2,4):
-
-- Without outage: optimal makespan 8 hours.
-- With outage: optimal makespan 10 hours.
-- Outage-aware QUBO at H=10: 50 binary variables.
-
-Important: The frontend must actually transmit the outage field
-to the API. A backend cannot infer a user-selected outage that
-was omitted from the HTTP request.
-
-The current frontend transport omits this field. Its correction
-is intentionally outside the backend-only changes described here.
-
-To verify the backend independently, run the API regression tests
-or POST inputs/extension_milling_outage.json to /solver.
-
-This feature uses an exact classical QUBO solver. It does not
-claim physical quantum-hardware execution.
+For the 3x3 example, outage-free optimum is 8 hours. The F outage `[2,4)` changes the optimum to 10 hours (+25%). Exact minimum QUBO energy is 1 at horizons 8 and 9, then 0 at horizon 10. This is an exact solver certificate for these specific small instances, not a quantum speedup claim.
