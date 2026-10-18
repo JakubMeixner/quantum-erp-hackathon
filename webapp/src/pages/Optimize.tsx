@@ -18,6 +18,7 @@ import {
   type FormValues,
   type Job,
   type Machine,
+  type Outage,
   type OutageValues,
   type ScheduledOperation,
 } from "../domain";
@@ -48,6 +49,8 @@ export default function Optimize() {
   const [solved, setSolved] = useState<{
     response: SolverResponse;
     operations: ScheduledOperation[];
+    // Outages exactly as they were sent to the solver.
+    outages: Outage[];
   } | null>(null);
   const [running, setRunning] = useState(false);
 
@@ -116,7 +119,6 @@ export default function Optimize() {
 
   const handleRun = async () => {
     const result = buildSolverInput(values, variant, outageEnabled ? outage : null);
-    console.log(result);
     if (!result.ok) {
       setInputError(result.error);
       return;
@@ -124,9 +126,14 @@ export default function Optimize() {
     setInputError(null);
     setRunning(true);
     try {
+      console.log(result.input)
       const response = await callSolver(result.input);
-      console.log(response)
-      setSolved({ response, operations: scheduleToOperations(response, variant) });
+      console.log(response);
+      setSolved({
+        response,
+        operations: scheduleToOperations(response, variant),
+        outages: result.input.outages ?? [],
+      });
     } catch (err) {
       setInputError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -225,37 +232,33 @@ export default function Optimize() {
             machines={variant.machines}
             blocks={blocks}
             horizon={solved?.response.makespan}
-          />
+            outages={solved?.outages}
+          >
+            {/* Inside the timetable, only once results exist */}
+            {solved && (
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  color: 'white'
+                }}
+              >
+                <Typography fontWeight={600}>
+                  Makespan: {solved.response.makespan}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  onClick={() => downloadJson("results.json", solved.response)}
+                  sx={{color: "white", borderColor: "white"}}
+                >
+                  Download results
+                </Button>
+              </Box>
+            )}
+          </Timetable>
         </Box>
       </Box>
-
-      {/* Below the timetable, only once results exist */}
-      {solved && (
-        <Box sx={{ display: "flex", gap: 3 }}>
-          <Box sx={{ flex: 2, display: { xs: "none", md: "block" } }} />
-          <Box
-            sx={{
-              flex: 3,
-              minWidth: 0,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              color: 'white'
-            }}
-          >
-            <Typography fontWeight={600}>
-              Makespan: {solved.response.makespan}
-            </Typography>
-            <Button
-              variant="outlined"
-              onClick={() => downloadJson("results.json", solved.response)}
-              sx={{color: "white", borderColor: "white"}}
-            >
-              Download results
-            </Button>
-          </Box>
-        </Box>
-      )}
     </Box>
   );
 }

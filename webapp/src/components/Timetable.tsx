@@ -1,11 +1,14 @@
+import type { ReactNode } from "react";
 import { Box, Paper, Typography, Tooltip } from "@mui/material";
-import type { Machine } from "../domain";
+import type { Machine, Outage } from "../domain";
 
 /** The time axis is at least this long; it grows when the schedule is longer. */
 const MIN_HORIZON = 24;
 
 const ROW_HEIGHT = 64;
 const LABEL_WIDTH = 48;
+
+const OUTAGE_RED = "#e53935";
 
 export interface TimetableBlock {
   id: string;
@@ -25,21 +28,30 @@ interface TimetableProps {
   blocks?: TimetableBlock[];
   /** Exact length of the time axis (e.g. the makespan returned by the solver). */
   horizon?: number;
+  /** Outages as sent to the solver; each one is drawn on its machine's row. */
+  outages?: Outage[];
+  /** Rendered at the bottom of the panel, under the rows. */
+  children?: ReactNode;
 }
 
 export default function Timetable({
   machines,
   blocks = [],
   horizon: fixedHorizon,
+  outages = [],
+  children,
 }: TimetableProps) {
   const blocksEnd = Math.ceil(
     blocks.reduce((max, b) => Math.max(max, b.start + b.duration), 0),
   );
-  // With a fixed horizon the axis ends exactly there (never shorter than the blocks).
+  const outagesEnd = Math.ceil(outages.reduce((max, o) => Math.max(max, o.end), 0));
+  // Never cut off a block or an outage.
+  const extent = Math.max(blocksEnd, outagesEnd);
+  // With a fixed horizon the axis ends exactly there (unless something reaches further).
   const horizon =
     fixedHorizon !== undefined
-      ? Math.max(1, Math.ceil(fixedHorizon), blocksEnd)
-      : Math.max(MIN_HORIZON, blocksEnd);
+      ? Math.max(1, Math.ceil(fixedHorizon), extent)
+      : Math.max(MIN_HORIZON, extent);
   const tickEvery = Math.max(1, Math.ceil(horizon / 12));
 
   const pct = (units: number) => `${(units / horizon) * 100}%`;
@@ -131,9 +143,32 @@ export default function Timetable({
                 </Box>
                 </Tooltip>
               ))}
+
+            {outages
+              .filter((o) => o.machine === label)
+              .map((o, i) => (
+                <Tooltip key={`outage-${i}`} title="Machine outage">
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 6,
+                      bottom: 6,
+                      left: pct(o.start),
+                      width: pct(o.end - o.start),
+                      boxSizing: "border-box",
+                      border: `2px solid ${OUTAGE_RED}`,
+                      borderRadius: 2,
+                      backgroundColor: "rgba(229,57,53,0.12)",
+                      backgroundImage: `repeating-linear-gradient(45deg, ${OUTAGE_RED} 0 3px, transparent 3px 10px)`,
+                    }}
+                  />
+                </Tooltip>
+              ))}
           </Box>
         </Box>
       ))}
+
+      {children && <Box sx={{ mt: 2 }}>{children}</Box>}
     </Paper>
   );
 }
