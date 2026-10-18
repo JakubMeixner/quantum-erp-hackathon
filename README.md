@@ -2,6 +2,10 @@
 
 **Status:** Public MIT-licensed project with two baseline implementations, an outage-aware extension, a React/FastAPI demo, and an optional VeloxQ backend. The video and live jury presentation are separate deliverables.
 
+## Demo video
+
+[Watch the project demo](https://drive.google.com/file/d/1MOAczUxmDaWdsAAbA9V9pIeeRzlev6zP/view)
+
 ## Quick start and reproducibility
 
 **Requirements:** Python >=3.10, [uv](https://docs.astral.sh/uv/), and (for the web UI) Linux-native Node.js 22 with npm. On WSL, verify `node -p "process.platform"` returns `linux`; Windows npm cannot reliably build inside a Linux `/tmp` worktree. Run commands from the repository root unless stated otherwise. `uv.lock` and `webapp/package-lock.json` are committed for reproducibility.
