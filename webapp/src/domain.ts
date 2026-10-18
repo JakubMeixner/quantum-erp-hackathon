@@ -43,6 +43,45 @@ export const parseDuration = (value: string): number | null => {
 
 export const isValid = (value: string): boolean => parseDuration(value) !== null;
 
+/** Outage inputs as typed by the user. */
+export interface OutageValues {
+  machine: Machine | "";
+  start: string;
+  end: string;
+}
+
+export const createEmptyOutage = (): OutageValues => ({
+  machine: "",
+  start: "",
+  end: "",
+});
+
+/** An outage as sent to the backend: machine unavailable in [start, end). */
+export interface Outage {
+  machine: Machine;
+  start: number;
+  end: number;
+}
+
+/** Returns the number, or null when the text is empty, not a number or not greater than zero. */
+export const parsePositiveNumber = (value: string): number | null => {
+  if (value.trim() === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : null;
+};
+
+/**
+ * Valid outage: machine belongs to the variant, start and end are greater
+ * than zero, and start is smaller than end (so they are never equal).
+ */
+export function parseOutage(values: OutageValues, variant: Variant): Outage | null {
+  if (values.machine === "" || !variant.machines.includes(values.machine)) return null;
+  const start = parsePositiveNumber(values.start);
+  const end = parsePositiveNumber(values.end);
+  if (start === null || end === null || start >= end) return null;
+  return { machine: values.machine, start, end };
+}
+
 /**
  * How a job's operation on one machine is tied to the previous machine (T -> F -> S):
  *  - "start": it cannot START earlier than the job STARTS on the previous machine

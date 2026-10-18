@@ -1,9 +1,12 @@
 import {
   createEmptyValues,
   parseDuration,
+  parseOutage,
   type FormValues,
   type Job,
   type Machine,
+  type Outage,
+  type OutageValues,
   type Variant,
 } from "./domain";
 
@@ -17,6 +20,8 @@ export interface SolverInput {
   machines: Machine[];
   /** durations[job][machine], in whole hours. */
   durations: Record<string, Record<string, number>>;
+  /** Present only when the outage switch is on. */
+  outages?: Outage[];
 }
 
 export type BuildResult =
@@ -27,7 +32,11 @@ export type BuildResult =
  * The solver in the repo works on positive integer durations, so anything
  * else is rejected with a message instead of being silently rounded.
  */
-export function buildSolverInput(values: FormValues, variant: Variant): BuildResult {
+export function buildSolverInput(
+  values: FormValues,
+  variant: Variant,
+  outageValues: OutageValues | null = null,
+): BuildResult {
   const durations: SolverInput["durations"] = {};
 
   for (const job of variant.jobs) {
@@ -44,18 +53,31 @@ export function buildSolverInput(values: FormValues, variant: Variant): BuildRes
     }
   }
 
+  let outages: Outage[] | undefined;
+  if (outageValues) {
+    const outage = parseOutage(outageValues, variant);
+    if (!outage) {
+      return { ok: false, error: "The outage is incomplete or invalid." };
+    }
+    if (!Number.isInteger(outage.start) || !Number.isInteger(outage.end)) {
+      return { ok: false, error: "Outage start and end must be whole numbers." };
+    }
+    outages = [outage];
+  }
+
   return {
     ok: true,
     input: {
       jobs: [...variant.jobs],
       machines: [...variant.machines],
       durations,
+      ...(outages ? { outages } : {}),
     },
   };
 }
 
 export type ParseResult =
-  | { ok: true; values: FormValues }
+  | { ok: true; values: FormValues; outage: OutageValues | null }
   | { ok: false; error: string };
 
 const fail = (error: string): ParseResult => ({ ok: false, error });
@@ -83,13 +105,43 @@ export function parseSolverInputFile(text: string, variant: Variant): ParseResul
   if (data.problem !== undefined && data.problem !== "erp_scheduling") {
     return fail('"problem" must be "erp_scheduling".');
   }
-  if (Array.isArray(data.outages) && data.outages.length > 0) {
-    return fail("Inputs with outages cannot be shown in this form.");
-  }
   if (data.jobs.length !== variant.jobs.length) {
     return fail(
       `For ${variant.name} the file must contain exactly ${variant.jobs.length} jobs: ${variant.jobs.join(", ")}.`,
     );
+  }
+
+  let outage: OutageValues | null = null;
+  if (data.outages !== undefined) {
+    if (!Array.isArray(data.outages)) return fail('"outages" must be an array.');
+    if (data.outages.length > 1) {
+      return fail("Only one outage is supported in this form.");
+    }
+    if (data.outages.length === 1) {
+      const entry: unknown = data.outages[0];
+      if (!isRecord(entry)) return fail("The outage entry is invalid.");
+      if (
+        typeof entry.machine !== "string" ||
+        !variant.machines.some((m) => m === entry.machine)
+      ) {
+        return fail(`Outage machine must be one of: ${variant.machines.join(", ")}.`);
+      }
+      const candidate: OutageValues = {
+        machine: entry.machine as Machine,
+        start: String(entry.start),
+        end: String(entry.end),
+      };
+      if (
+        typeof entry.start !== "number" ||
+        typeof entry.end !== "number" ||
+        parseOutage(candidate, variant) === null
+      ) {
+        return fail(
+          "Outage start and end must be numbers greater than zero, with start smaller than end.",
+        );
+      }
+      outage = candidate;
+    }
   }
 
   const values = createEmptyValues();
@@ -117,5 +169,5 @@ export function parseSolverInputFile(text: string, variant: Variant): ParseResul
     }
   }
 
-  return { ok: true, values };
+  return { ok: true, values, outage };
 }

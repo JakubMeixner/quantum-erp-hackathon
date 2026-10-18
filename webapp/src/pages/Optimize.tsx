@@ -12,11 +12,13 @@ import Timetable, { type TimetableBlock } from "../components/Timetable";
 import {
   VARIANT_2X2,
   VARIANT_3X3,
+  createEmptyOutage,
   createEmptyValues,
   packSchedule,
   type FormValues,
   type Job,
   type Machine,
+  type OutageValues,
   type ScheduledOperation,
 } from "../domain";
 import { buildSolverInput, parseSolverInputFile } from "../solverInput";
@@ -39,6 +41,8 @@ export default function Optimize() {
   const variant = is3x3 ? VARIANT_3X3 : VARIANT_2X2;
 
   const [values, setValues] = useState<FormValues>(createEmptyValues);
+  const [outageEnabled, setOutageEnabled] = useState(false);
+  const [outage, setOutage] = useState<OutageValues>(createEmptyOutage);
   const [inputError, setInputError] = useState<string | null>(null);
   // Result returned by the solver; null = show the local "as written" packing.
   const [solved, setSolved] = useState<{
@@ -65,6 +69,13 @@ export default function Optimize() {
 
   const handleVariantChange = (checked: boolean) => {
     setIs3x3(checked);
+    // The outage machine must exist in the new variant (e.g. S is not in 2x2).
+    const next = checked ? VARIANT_3X3 : VARIANT_2X2;
+    setOutage((prev) =>
+      prev.machine !== "" && !next.machines.includes(prev.machine)
+        ? { ...prev, machine: "" }
+        : prev,
+    );
     // A result and an error belong to the variant they were made for.
     setSolved(null);
     setInputError(null);
@@ -76,6 +87,16 @@ export default function Optimize() {
     setSolved(null);
   };
 
+  const handleOutageEnabledChange = (enabled: boolean) => {
+    setOutageEnabled(enabled);
+    setSolved(null);
+  };
+
+  const handleOutageChange = (next: OutageValues) => {
+    setOutage(next);
+    setSolved(null);
+  };
+
   const handleUpload = async (file: File) => {
     try {
       const parsed = parseSolverInputFile(await file.text(), variant);
@@ -84,6 +105,8 @@ export default function Optimize() {
         return;
       }
       setValues(parsed.values);
+      setOutageEnabled(parsed.outage !== null);
+      setOutage(parsed.outage ?? createEmptyOutage());
       setSolved(null);
       setInputError(null);
     } catch {
@@ -92,7 +115,8 @@ export default function Optimize() {
   };
 
   const handleRun = async () => {
-    const result = buildSolverInput(values, variant);
+    const result = buildSolverInput(values, variant, outageEnabled ? outage : null);
+    console.log(result);
     if (!result.ok) {
       setInputError(result.error);
       return;
@@ -101,6 +125,7 @@ export default function Optimize() {
     setRunning(true);
     try {
       const response = await callSolver(result.input);
+      console.log(response)
       setSolved({ response, operations: scheduleToOperations(response, variant) });
     } catch (err) {
       setInputError(err instanceof Error ? err.message : String(err));
@@ -183,6 +208,10 @@ export default function Optimize() {
             values={values}
             variant={variant}
             onChange={handleChange}
+            outageEnabled={outageEnabled}
+            onOutageEnabledChange={handleOutageEnabledChange}
+            outage={outage}
+            onOutageChange={handleOutageChange}
             onRun={handleRun}
             onUpload={handleUpload}
             running={running}
