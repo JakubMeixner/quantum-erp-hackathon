@@ -45,7 +45,7 @@ export default function Home() {
 
       <Button
         variant="contained"
-        color="primary"
+        color="transparent"
         onClick={() => navigate("/optimize")}
         sx={{
           fontFamily: INDUSTRIAL_FONT,
@@ -54,7 +54,11 @@ export default function Home() {
           letterSpacing: "0.12em",
           px: { xs: 6, md: 10 },
           py: { xs: 2, md: 2.5 },
-          color: 'rgba(255,255,255,.8)'
+          color: 'rgba(255,255,255,.8)',
+          background: 'rgba(98,12,49,.7)',
+          '&:hover': {
+            background: 'rgba(48,12,49,.7)',
+          }
         }}
       >
         Optimize
