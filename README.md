@@ -186,3 +186,40 @@ Run `uv run python -m unittest discover -s tests -v`.
 No physical quantum hardware execution or quantum advantage has
 been demonstrated. The VeloxQ integration is a heuristic remote
 backend; its returned schedules require independent validation.
+
+## Machine outage semantics and API contract
+
+An outage is a fixed half-open interval [start, end) during which
+the specified machine cannot execute an operation.
+
+Operations are non-preemptive. Every operation on an unavailable
+machine must finish before the outage or start after it.
+
+The API supports both the original hackathon JSON schema and
+the compact jobs/machines/durations schema.
+
+Invalid outage intervals and unknown machines are rejected with
+HTTP 422 rather than silently ignored.
+
+The QUBO removes operation-start variables that would intersect
+an outage. Independent schedule validation checks the same
+physical constraint.
+
+For the 3x3 benchmark with milling unavailable during [2,4):
+
+- Without outage: optimal makespan 8 hours.
+- With outage: optimal makespan 10 hours.
+- Outage-aware QUBO at H=10: 50 binary variables.
+
+Important: The frontend must actually transmit the outage field
+to the API. A backend cannot infer a user-selected outage that
+was omitted from the HTTP request.
+
+The current frontend transport omits this field. Its correction
+is intentionally outside the backend-only changes described here.
+
+To verify the backend independently, run the API regression tests
+or POST inputs/extension_milling_outage.json to /solver.
+
+This feature uses an exact classical QUBO solver. It does not
+claim physical quantum-hardware execution.

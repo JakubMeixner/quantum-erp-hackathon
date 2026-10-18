@@ -14,17 +14,54 @@ class Factory:
     outages: tuple[tuple[str, tuple[tuple[int, int], ...]], ...] = ()
 
     def __post_init__(self):
-        assert len(self.jobs) == len(self.durations) and len(set(self.jobs)) == len(self.jobs)
-        assert len(set(self.machines)) == len(self.machines)
-        assert all(len(row) == len(self.machines) and all(isinstance(d, int) and d > 0 for d in row)
-                   for row in self.durations)
+        if (
+            not self.jobs
+            or len(set(self.jobs)) != len(self.jobs)
+            or len(self.jobs) != len(self.durations)
+        ):
+            raise ValueError('Invalid job list or processing matrix')
+
+        if not self.machines or len(set(self.machines)) != len(self.machines):
+            raise ValueError('Machine names must be nonempty and unique')
+
+        for row in self.durations:
+            if len(row) != len(self.machines):
+                raise ValueError('Incorrect number of operations')
+
+            if any(type(d) is not int or d <= 0 for d in row):
+                raise ValueError('Durations must be positive integers')
+
+        seen = set()
+
         for machine, intervals in self.outages:
-            assert machine in self.machines
-            assert all(0 <= a < b for a, b in intervals)
-            assert all(b <= c for (a, b), (c, d) in zip(intervals, intervals[1:]))
+            if machine not in self.machines or machine in seen:
+                raise ValueError('Invalid or duplicated outage machine')
+
+            seen.add(machine)
+
+            for a, b in intervals:
+                if (
+                    type(a) is not int
+                    or type(b) is not int
+                    or not (0 <= a < b)
+                ):
+                    raise ValueError('Invalid outage interval')
+
+            for (a, b), (c, d) in zip(intervals, intervals[1:]):
+                if b > c:
+                    raise ValueError('Outage intervals overlap or are unsorted')
 
     def downtime(self, machine_index: int):
         return dict(self.outages).get(self.machines[machine_index], ())
+
+    def operation_is_available(
+        self, machine_index: int, start: int, duration: int
+    ) -> bool:
+        """Whether an uninterrupted operation avoids every outage."""
+        return all(
+            start + duration <= a or start >= b
+            for a, b in self.downtime(machine_index)
+        )
 
     @property
     def n(self): return len(self.jobs)
@@ -89,9 +126,10 @@ def validate(factory: Factory, records: list[dict]):
         i, k = factory.jobs.index(key[0]), factory.machines.index(key[1])
         if end - start != factory.durations[i][k]:
             raise ValueError(f'Incorrect duration for {key}')
-        for a, b in factory.downtime(k):
-            if start < b and a < end:
-                raise ValueError(f'Machine outage violated by {key}')
+        if not factory.operation_is_available(
+            k, start, factory.durations[i][k]
+        ):
+            raise ValueError(f'Machine outage violated by {key}')
         ops[key] = (start, end)
     if set(ops) != expected:
         raise ValueError('Missing operation')
